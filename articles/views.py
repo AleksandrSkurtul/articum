@@ -1,24 +1,29 @@
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from django.http import HttpResponse
 
 from articles.models import Article
-from articles.serializers import ArticleSerializer, CreateArticleSerializer
+from articles.serializers import ArticleSerializer, CreateArticleSerializer, UserSerializer
 
 
 class ArticleViewSet(ModelViewSet):
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ['get', 'post', 'put', 'delete', 'head', 'options']
     queryset = Article.objects.all()
 
     def get_permissions(self):
-        if self.request.method in ['POST', 'PATCH', 'DELETE']:
+        if self.request.method in ['POST', 'PUT', 'DELETE']:
             return [IsAuthenticated()]
         else:
             return [IsAuthenticatedOrReadOnly()]
 
     def get_serializer_class(self):
-        if self.request.method in ['POST', 'PATCH', 'DELETE']:
+        if self.request.method in ['POST', 'PUT', 'DELETE']:
             return CreateArticleSerializer
         else:
             return ArticleSerializer
@@ -32,3 +37,35 @@ class ArticleViewSet(ModelViewSet):
         article = serializer.save()
         serializer = ArticleSerializer(article)
         return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        article = self.get_object()
+        if article.user_id == self.request.user.id:
+            serializer = CreateArticleSerializer(
+                data=request.data,
+                context={'user_id': self.request.user.id}
+            )
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            return Response(serializer.data)
+        return Response({'error': 'You have no permission!'},
+                        status=status.HTTP_401_UNAUTHORIZED)
+
+    def destroy(self, request, *args, **kwargs):
+        article = self.get_object()
+        if article.user_id != self.request.user.id:
+            serializer = CreateArticleSerializer(
+                data=request.data,
+                context={'user_id': self.request.user.id}
+            )
+            return Response({'error': 'You have no permission!'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        return super().destroy(request, *args, **kwargs)
+
+
+class UserArticlesViewSet(ListAPIView):
+    serializer_class = ArticleSerializer
+
+    def get_queryset(self):
+        return Article.objects.select_related('user').filter(
+            user__username=self.kwargs.get('username'))
