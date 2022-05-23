@@ -46,7 +46,7 @@ class ArticleViewSet(ModelViewSet):
                 context={'user_id': self.request.user.id}
             )
             serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
+            serializer.update(article, serializer.data)
             return Response(serializer.data)
         return Response({'error': 'You have no permission!'},
                         status=status.HTTP_401_UNAUTHORIZED)
@@ -54,10 +54,6 @@ class ArticleViewSet(ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         article = self.get_object()
         if article.user_id != self.request.user.id:
-            serializer = CreateArticleSerializer(
-                data=request.data,
-                context={'user_id': self.request.user.id}
-            )
             return Response({'error': 'You have no permission!'},
                             status=status.HTTP_401_UNAUTHORIZED)
         return super().destroy(request, *args, **kwargs)

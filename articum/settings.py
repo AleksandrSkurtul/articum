@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'articles',
     'authentication',
+    'accounts',
     'rest_framework',
     'corsheaders',
     'djoser',
