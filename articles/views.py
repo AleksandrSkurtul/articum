@@ -2,12 +2,15 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound, APIException
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from django.http import HttpResponse
 
+from accounts.models import UserAccount
 from articles.models import Article
 from articles.serializers import ArticleSerializer, CreateArticleSerializer, UserSerializer
 
@@ -65,3 +68,26 @@ class UserArticlesViewSet(ListAPIView):
     def get_queryset(self):
         return Article.objects.select_related('user').filter(
             user__username=self.kwargs.get('username'))
+
+
+class LikeArticle(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        user_id = self.request.user.id
+        article_id = kwargs.get("article_id")
+
+        user = UserAccount.objects.prefetch_related('liked_articles').get(user_id=user_id)
+
+        try:
+            article = Article.objects.get(id=article_id)
+        except Article.DoesNotExist:
+            raise NotFound("Article with such id doesn't exist!")
+
+        if user.liked_articles.all().filter(id=article_id).exists():
+            user.unlike(article)
+            return Response(f'Now you unlike {article}', status=status.HTTP_201_CREATED)
+
+        user.like(article)
+
+        return Response(f'Now you like {article}', status=status.HTTP_201_CREATED)

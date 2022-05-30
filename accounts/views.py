@@ -35,16 +35,16 @@ class AccountUnfollow(APIView):
         followee_username = kwargs.get("username")
         follower_id = self.request.user.id
 
+        follower = UserAccount.objects.prefetch_related('follows').get(user_id=follower_id)
+
         try:
             followee = UserAccount.objects.get(user__username=followee_username)
         except UserAccount.DoesNotExist:
             raise NotFound("Account with such name doesn't exist!")
 
-        if not UserAccount.objects.filter(user_id=follower_id).filter(
-                follows__user__username=followee_username).exists():
+        if not follower.follows.all().filter(user__username=followee_username).exists():
             raise APIException("You don't follow this user to unfollow!")
 
-        follower = UserAccount.objects.get(follower_id)
         follower.unfollow(followee)
 
         return Response(f'Now you unfollow {followee_username}', status=status.HTTP_201_CREATED)
