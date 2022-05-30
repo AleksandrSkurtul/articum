@@ -5,7 +5,7 @@ from articles.models import Article
 class UserAccount(models.Model):
     user = models.OneToOneField('auth.User', null=False, on_delete=models.CASCADE)
     follows = models.ManyToManyField('self', related_name='followed_by', symmetrical=False)
-    liked_articles = models.ManyToManyField(Article)
+    liked_articles = models.ManyToManyField(Article, related_name='likes')
 
     def follow(self, account):
         self.follows.add(account)

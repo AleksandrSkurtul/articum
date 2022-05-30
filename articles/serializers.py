@@ -3,6 +3,7 @@ from django.db import transaction
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 
+from accounts.models import UserAccount
 from articles.models import Article
 
 
@@ -14,10 +15,14 @@ class UserSerializer(serializers.ModelSerializer):
 
 class ArticleSerializer(serializers.ModelSerializer):
     user = UserSerializer()
+    likes_count = serializers.SerializerMethodField(method_name='get_likes_count')
 
     class Meta:
         model = Article
-        fields = ['id', 'title', 'body', 'user']
+        fields = ['id', 'title', 'body', 'likes_count', 'user', ]
+
+    def get_likes_count(self, instance):
+        return instance.likes.count()
 
 
 class CreateArticleSerializer(serializers.ModelSerializer):
