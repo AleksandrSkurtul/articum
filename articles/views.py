@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_list_or_404
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, APIException
@@ -11,8 +12,9 @@ from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnl
 from django.http import HttpResponse
 
 from accounts.models import UserAccount
-from articles.models import Article
-from articles.serializers import ArticleSerializer, CreateArticleSerializer, UserSerializer
+from articles.models import Article, Comment
+from articles.serializers import ArticleSerializer, CreateArticleSerializer, UserSerializer, CommentSerializer, \
+    CreateCommentSerializer
 
 
 class ArticleViewSet(ModelViewSet):
@@ -91,3 +93,52 @@ class LikeArticle(APIView):
         user.like(article)
 
         return Response(f'Now you like {article}', status=status.HTTP_201_CREATED)
+
+
+class CommentViewSet(ModelViewSet):
+    http_method_names = ['get', 'post', 'put', 'delete']
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+    def get_permissions(self):
+        if self.request.method in ['POST', 'PUT', 'DELETE']:
+            return [IsAuthenticated()]
+        else:
+            return [IsAuthenticatedOrReadOnly()]
+
+    def get_queryset(self):
+        return Comment.objects.filter(
+            article_id=self.kwargs.get('nested_1_pk'))
+
+    def create(self, request, *args, **kwargs):
+        serializer = CreateCommentSerializer(
+            data=request.data,
+            context={
+                'user_id': self.request.user.id,
+                'article_id': self.kwargs.get('nested_1_pk')
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+        comment = serializer.save()
+        serializer = CommentSerializer(comment)
+        return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        comment = self.get_object()
+        if comment.user_id == self.request.user.id:
+            serializer = CreateCommentSerializer(
+                data=request.data,
+                context={'user_id': self.request.user.id}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.update(comment, serializer.data)
+            return Response(serializer.data)
+        return Response({'error': 'You have no permission!'},
+                        status=status.HTTP_401_UNAUTHORIZED)
+
+    def destroy(self, request, *args, **kwargs):
+        comment = self.get_object()
+        if comment.user_id != self.request.user.id:
+            return Response({'error': 'You have no permission!'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        return super().destroy(request, *args, **kwargs)
