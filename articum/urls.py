@@ -22,5 +22,6 @@ urlpatterns = [
     path('following/', include('accounts.urls')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
+    path('search/', include('global_search.urls')),
     path('__debug__/', include('debug_toolbar.urls')),
 ]

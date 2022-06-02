@@ -1,6 +1,5 @@
-from django.urls import path, include
+from django.urls import path
 
-import articles
 from accounts.views import AccountFollow, AccountUnfollow
 
 urlpatterns = [

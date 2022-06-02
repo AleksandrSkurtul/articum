@@ -1,25 +1,23 @@
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_list_or_404
 from rest_framework import status
-from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, APIException
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from django.http import HttpResponse
+from rest_framework.filters import SearchFilter
 
 from accounts.models import UserAccount
 from articles.models import Article, Comment
-from articles.serializers import ArticleSerializer, CreateArticleSerializer, UserSerializer, CommentSerializer, \
+from articles.serializers import ArticleSerializer, CreateArticleSerializer, CommentSerializer, \
     CreateCommentSerializer
 
 
 class ArticleViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'put', 'delete', 'head', 'options']
     queryset = Article.objects.all()
+    filter_backends = [SearchFilter]
+    search_fields = ['title', 'body', 'user__username']
 
     def get_permissions(self):
         if self.request.method in ['POST', 'PUT', 'DELETE']:

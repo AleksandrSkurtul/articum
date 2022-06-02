@@ -40,7 +40,9 @@ INSTALLED_APPS = [
     'articles',
     'authentication',
     'accounts',
+    'global_search',
     'rest_framework',
+    'drf_multiple_model',
     'corsheaders',
     'djoser',
 
