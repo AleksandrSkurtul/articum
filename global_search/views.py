@@ -1,36 +1,28 @@
 from django.contrib.auth import get_user_model
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from articles.models import Article
 from articles.serializers import ArticleSerializer, UserSerializer
-from drf_multiple_model.views import ObjectMultipleModelAPIView
-from drf_multiple_model.pagination import MultipleModelLimitOffsetPagination
 
 
-class LimitPagination(MultipleModelLimitOffsetPagination):
-    default_limit = 2
+class Search(APIView):
 
-
-class Search(ObjectMultipleModelAPIView):
-    pagination_class = LimitPagination
-
-    def get_querylist(self):
+    def get(self, request, format=None, **kwargs):
         query = self.request.query_params['query']
-
-        users_searched_by_username = get_user_model().objects.filter(username__icontains=query)
 
         articles_searched_by_title = Article.objects.filter(title__icontains=query)
         articles_searched_by_body = Article.objects.filter(body__icontains=query)
+        users_searched_by_username = get_user_model().objects.filter(username__icontains=query)
 
-        articles_searched_result = articles_searched_by_title.union(articles_searched_by_body)
+        articles_searched_by_title_serializer = ArticleSerializer(articles_searched_by_title, many=True)
+        articles_searched_by_body_serializer = ArticleSerializer(articles_searched_by_body, many=True)
+        users_searched_by_username_serializer = UserSerializer(users_searched_by_username, many=True)
 
-        querylist = [
+        return Response(
             {
-                'queryset': articles_searched_result,
-                'serializer_class': ArticleSerializer,
-            },
-            {
-                'queryset': users_searched_by_username,
-                'serializer_class': UserSerializer,
-            },
-        ]
-
-        return querylist
+                "Article by title": articles_searched_by_title_serializer.data,
+                "Users by name": users_searched_by_username_serializer.data,
+                "Article by body": articles_searched_by_body_serializer.data,
+            }
+        )
