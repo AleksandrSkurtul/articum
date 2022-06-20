@@ -21,8 +21,8 @@ class Search(APIView):
 
         return Response(
             {
-                "Article by title": articles_searched_by_title_serializer.data,
+                "Articles by title": articles_searched_by_title_serializer.data,
                 "Users by name": users_searched_by_username_serializer.data,
-                "Article by body": articles_searched_by_body_serializer.data,
+                "Articles by body": articles_searched_by_body_serializer.data,
             }
         )
