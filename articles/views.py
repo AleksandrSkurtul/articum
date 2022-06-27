@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework import status
 from rest_framework.exceptions import NotFound, APIException
 from rest_framework.generics import ListAPIView
@@ -15,7 +16,7 @@ from articles.serializers import ArticleSerializer, CreateArticleSerializer, Com
 
 class ArticleViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'put', 'delete', 'head', 'options']
-    queryset = Article.objects.all()
+    queryset = Article.objects.annotate(likes_count=Count('likes')).order_by('likes_count').reverse()
     filter_backends = [SearchFilter]
     search_fields = ['title', 'body', 'user__username']
 
