@@ -10,6 +10,7 @@ from rest_framework.filters import SearchFilter
 
 from accounts.models import UserAccount
 from articles.models import Article, Comment
+from articles.pagination import DefaultPagination
 from articles.serializers import ArticleSerializer, CreateArticleSerializer, CommentSerializer, \
     CreateCommentSerializer
 
@@ -19,6 +20,7 @@ class ArticleViewSet(ModelViewSet):
     queryset = Article.objects.annotate(likes_count=Count('likes')).order_by('likes_count').reverse()
     filter_backends = [SearchFilter]
     search_fields = ['title', 'body', 'user__username']
+    pagination_class = DefaultPagination
 
     def get_permissions(self):
         if self.request.method in ['POST', 'PUT', 'DELETE']:
